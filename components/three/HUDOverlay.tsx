@@ -172,11 +172,12 @@ export default function HUDOverlay({
                 }}
               >
                 <Image
-                  src="/images/gaming_fest_logo.webp"
+                  src="/images/gaming_fest_title_v2.webp"
                   alt="Gaming Fest - The Ultimate Cyber Arena"
-                  width={1305}
-                  height={672}
+                  width={1297}
+                  height={664}
                   priority
+                  unoptimized
                   className="w-full h-auto object-contain filter drop-shadow-[0_0_35px_rgba(56,189,248,0.45)] select-none pointer-events-none"
                 />
                 <h1 className="sr-only">GAMING FEST</h1>
