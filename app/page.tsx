@@ -166,17 +166,43 @@ export default function HomePage() {
     }
   }, []);
 
+  // Stadium Depth-of-Field Blur:
+  // Starts with deep blur (18px) when at top, dissolves cleanly as user scrolls down towards 0.08
+  const blurFactor = Math.min(Math.max(scrollProgress / 0.08, 0), 1);
+  const stadiumBlur = (1 - blurFactor) * 18;
+  const blurOpacity = 1 - blurFactor;
+
   return (
     <div className="relative min-h-screen bg-[#03040a]">
-      {/* 1. Full-screen 3D Scene Canvas */}
-      <ArenaCanvas
-        scrollProgress={scrollProgress}
-        onSelectGame={setSelectedGame}
-        isIntroActive={isIntroActive}
-        onIntroComplete={handleSkipIntro}
-      />
+      {/* 1. Full-screen 3D Scene Canvas (Blurred initially, becomes 100% clear on scroll) */}
+      <div
+        className="fixed inset-0 -z-0 h-full w-full overflow-hidden will-change-[filter,transform]"
+        style={{
+          filter: stadiumBlur > 0.1 ? `blur(${stadiumBlur}px)` : "none",
+          transform: stadiumBlur > 0.1 ? `scale(${1 + (stadiumBlur / 18) * 0.04})` : "none",
+          transition: "filter 0.05s ease-out, transform 0.05s ease-out",
+        }}
+      >
+        <ArenaCanvas
+          scrollProgress={scrollProgress}
+          onSelectGame={setSelectedGame}
+          isIntroActive={isIntroActive}
+          onIntroComplete={handleSkipIntro}
+        />
+      </div>
 
-      {/* 2. Cinematic Sci-Fi HUD Overlay */}
+      {/* 2. Initial Depth-of-Field Ambient Vignette (Fades as blur disperses) */}
+      {scrollProgress < 0.12 && (
+        <div
+          className="pointer-events-none fixed inset-0 z-10 will-change-opacity"
+          style={{
+            backgroundColor: `rgba(3, 4, 10, ${blurOpacity * 0.35})`,
+            opacity: blurOpacity,
+          }}
+        />
+      )}
+
+      {/* 3. Cinematic Sci-Fi HUD Overlay (Z-30, GAMING FEST title remains 100% crisp and unblurred) */}
       <HUDOverlay
         scrollProgress={scrollProgress}
         onSelectGame={setSelectedGame}
