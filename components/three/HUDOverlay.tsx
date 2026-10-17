@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState, useEffect } from "react";
+import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { GAMES, type Game } from "@/config/site";
 import { sound } from "@/lib/audio";
@@ -152,17 +153,18 @@ export default function HUDOverlay({
               transition={{ duration: 0.8, ease: "easeOut" }}
               className="text-center"
             >
-              <h1
-                className="mt-4 uppercase tracking-wider font-bold"
-                style={{
-                  fontFamily: "SpaceGrotesk",
-                  fontSize: "16px",
-                  color: "#FFFFFF",
-                }}
-              >
-                GAMING FEST
-              </h1>
-              <p className="mx-auto mt-3 max-w-lg text-sm text-gray-300 md:text-base">
+              <div className="relative mx-auto w-full max-w-[340px] sm:max-w-[460px] md:max-w-[560px] lg:max-w-[620px] px-2 flex flex-col items-center justify-center">
+                <Image
+                  src="/images/gaming_fest_logo.webp"
+                  alt="Gaming Fest - The Ultimate Cyber Arena"
+                  width={1300}
+                  height={669}
+                  priority
+                  className="w-full h-auto object-contain filter drop-shadow-[0_0_35px_rgba(56,189,248,0.45)] select-none pointer-events-none"
+                />
+                <h1 className="sr-only">GAMING FEST</h1>
+              </div>
+              <p className="mx-auto mt-2 max-w-lg text-xs sm:text-sm text-gray-300 md:text-base">
                 Scroll to fly from game to game. Explore each battlefield up close in full 3D.
               </p>
 
