@@ -1,7 +1,14 @@
 @import "tailwindcss";
 
+@font-face {
+  font-family: 'SpaceGrotesk';
+  src: local('Space Grotesk'), local('SpaceGrotesk'), url('https://fonts.gstatic.com/s/spacegrotesk/v16/V8mQoQDjQSkFtoMM3T6r8E7mF71Q-g.woff2') format('woff2');
+  font-weight: 100 900;
+  font-display: swap;
+}
+
 @theme {
-  --font-sans: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Space Grotesk", SpaceGrotesk, ui-sans-serif, system-ui, sans-serif;
 }
 
 /* Custom scrollbar */

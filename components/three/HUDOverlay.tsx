@@ -152,10 +152,15 @@ export default function HUDOverlay({
               transition={{ duration: 0.8, ease: "easeOut" }}
               className="text-center"
             >
-              <h1 className="mt-4 text-5xl font-black uppercase tracking-tight text-white md:text-7xl lg:text-8xl">
-                <span className="bg-gradient-to-r from-amber-300 via-yellow-400 to-amber-500 bg-clip-text text-transparent drop-shadow-2xl">
-                  GAMING FEST
-                </span>
+              <h1
+                className="mt-4 uppercase tracking-wider font-bold"
+                style={{
+                  fontFamily: "SpaceGrotesk",
+                  fontSize: "16px",
+                  color: "#FFFFFF",
+                }}
+              >
+                GAMING FEST
               </h1>
               <p className="mx-auto mt-3 max-w-lg text-sm text-gray-300 md:text-base">
                 Scroll to fly from game to game. Explore each battlefield up close in full 3D.
