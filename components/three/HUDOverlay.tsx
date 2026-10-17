@@ -53,6 +53,17 @@ export default function HUDOverlay({
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [isIntroActive, onSkipIntro]);
 
+  // Scroll-driven animation for intro gateway logo:
+  // When scrolling down (scrollProgress: 0.00 -> 0.10):
+  // - Moves upward (y: 0 -> -340px)
+  // - Gets smaller (scale: 1.0 -> 0.40)
+  // - Fades out smoothly into the top edge
+  const introNorm = Math.min(Math.max(scrollProgress / 0.10, 0), 1);
+  const logoY = -introNorm * 340;
+  const logoScale = 1 - introNorm * 0.60;
+  const logoOpacity = Math.max(0, 1 - Math.pow(introNorm, 1.3));
+  const promptOpacity = Math.max(0, 1 - introNorm * 3.5);
+
   return (
     <div className="pointer-events-none fixed inset-0 z-30 flex flex-col justify-between p-3 md:p-5">
       {/* ------------------------------------------------------------- */}
@@ -149,11 +160,17 @@ export default function HUDOverlay({
               key="scene-intro"
               initial={{ opacity: 0, scale: 0.88, y: 25 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 1.05 }}
-              transition={{ duration: 0.8, ease: "easeOut" }}
-              className="text-center"
+              exit={{ opacity: 0, scale: 0.4, y: -340 }}
+              transition={{ duration: 0.5, ease: "easeOut" }}
+              className="text-center flex flex-col items-center justify-center"
             >
-              <div className="relative mx-auto w-full max-w-[340px] sm:max-w-[460px] md:max-w-[560px] lg:max-w-[620px] px-2 flex flex-col items-center justify-center">
+              <div
+                className="relative mx-auto w-full max-w-[340px] sm:max-w-[460px] md:max-w-[560px] lg:max-w-[620px] px-2 flex flex-col items-center justify-center will-change-transform"
+                style={{
+                  transform: `translate3d(0, ${logoY}px, 0) scale(${logoScale})`,
+                  opacity: logoOpacity,
+                }}
+              >
                 <Image
                   src="/images/gaming_fest_logo.webp"
                   alt="Gaming Fest - The Ultimate Cyber Arena"
@@ -164,12 +181,15 @@ export default function HUDOverlay({
                 />
                 <h1 className="sr-only">GAMING FEST</h1>
               </div>
-              <p className="mx-auto mt-2 max-w-lg text-xs sm:text-sm text-gray-300 md:text-base">
-                Scroll to fly from game to game. Explore each battlefield up close in full 3D.
-              </p>
 
               {/* Scroll prompt */}
-              <div className="mt-7 flex flex-col items-center gap-2">
+              <div
+                className="mt-5 flex flex-col items-center gap-2 will-change-transform"
+                style={{
+                  opacity: promptOpacity,
+                  transform: `translate3d(0, ${logoY * 0.4}px, 0)`,
+                }}
+              >
                 <span className="font-mono text-[11px] tracking-widest text-amber-400">
                   SCROLL TO ENTER 1ST GAME
                 </span>
