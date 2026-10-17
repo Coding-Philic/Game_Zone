@@ -1328,54 +1328,288 @@ function StadiumFloodlightTowers({ introTimeRef }: { introTimeRef: { current: nu
     }
   });
 
-  const towerPositions: [number, number, number, string][] = [
-    [-34, 0, -22, "#00e5ff"],
-    [34, 0, -22, "#f59e0b"],
-    [-28, 0, 32, "#8b5cf6"],
-    [28, 0, 32, "#10b981"],
-    [0, 0, -42, "#00e5ff"],
-  ];
-
   return (
     <group ref={towersGroupRef}>
-      {towerPositions.map(([x, y, z, color], i) => (
-        <group key={i} position={[x, y, z]}>
-          {/* Tower Foundation Pad */}
-          <mesh position={[0, 0.4, 0]}>
-            <cylinderGeometry args={[1.5, 2.0, 0.8, 16]} />
-            <meshStandardMaterial color="#0c101c" roughness={0.4} metalness={0.8} />
-          </mesh>
+      {/* The 3 Monumental Triangular Sky-Blue Spire Pillars on the behind of the arena */}
+      <TriangularSkyBluePillar position={[-34, 0, -22]} rotationY={Math.PI * 0.3} />
+      <TriangularSkyBluePillar position={[0, 0, -42]} rotationY={0} />
+      <TriangularSkyBluePillar position={[34, 0, -22]} rotationY={-Math.PI * 0.3} />
 
-          {/* Steel Lattice Mast */}
-          <mesh position={[0, 12, 0]}>
-            <cylinderGeometry args={[0.4, 0.7, 24, 6]} />
-            <meshStandardMaterial color="#1a2233" roughness={0.3} metalness={0.9} />
-          </mesh>
+      {/* Flanking Front Stadium Entrance Floodlight Towers */}
+      <FrontStadiumTower position={[-28, 0, 32]} color="#00e5ff" />
+      <FrontStadiumTower position={[28, 0, 32]} color="#00e5ff" />
+    </group>
+  );
+}
 
-          {/* Floodlight Head Fixture */}
-          <mesh position={[0, 24.2, 0]}>
-            <boxGeometry args={[3.0, 1.2, 1.4]} />
-            <meshStandardMaterial color="#0a0d17" roughness={0.2} metalness={0.9} />
-          </mesh>
-          <mesh position={[0, 24.2, 0.75]}>
-            <boxGeometry args={[2.8, 0.9, 0.1]} />
-            <meshBasicMaterial color={color} />
-          </mesh>
+// -------------------------------------------------------------
+// MONUMENTAL TRIANGULAR SKY-BLUE SCI-FI SPIRE PILLAR
+// -------------------------------------------------------------
+function TriangularSkyBluePillar({
+  position,
+  rotationY = 0,
+}: {
+  position: [number, number, number];
+  rotationY?: number;
+}) {
+  const ring1Ref = useRef<THREE.Group>(null);
+  const ring2Ref = useRef<THREE.Group>(null);
+  const pulseRef = useRef<THREE.Group>(null);
+  const coreRef = useRef<THREE.Mesh>(null);
+  const sparksRef = useRef<THREE.Points>(null);
 
-          {/* Volumetric Stage Spotlight Cone Pointing into the Arena */}
-          <mesh position={[0, 24, 0]}>
-            <cylinderGeometry args={[0.35, 4.5, 48, 16, 1, true]} />
-            <meshBasicMaterial
-              color={color}
-              transparent
-              opacity={0.18}
-              side={THREE.DoubleSide}
-              blending={THREE.AdditiveBlending}
-              depthWrite={false}
-            />
-          </mesh>
-        </group>
-      ))}
+  const starTexture = useMemo(() => createCircleParticleTexture(), []);
+
+  // Precompute 30 sparkling cyber embers orbiting the pillar
+  const sparkCoords = useMemo(() => {
+    const prng = createPRNG(Math.abs(position[0] * 100 + position[2]));
+    const pos = new Float32Array(30 * 3);
+    for (let i = 0; i < 30; i++) {
+      const angle = prng() * Math.PI * 2;
+      const radius = 1.6 + prng() * 2.2;
+      pos[i * 3] = Math.cos(angle) * radius;
+      pos[i * 3 + 1] = 2 + prng() * 25;
+      pos[i * 3 + 2] = Math.sin(angle) * radius;
+    }
+    return pos;
+  }, [position]);
+
+  useFrame((state) => {
+    const t = state.clock.getElapsedTime();
+
+    // 1. Counter-rotating magnetic triangular rings
+    if (ring1Ref.current) {
+      ring1Ref.current.rotation.y = t * 0.75;
+      ring1Ref.current.position.y = 9.5 + Math.sin(t * 1.5) * 0.45;
+    }
+    if (ring2Ref.current) {
+      ring2Ref.current.rotation.y = -t * 0.55;
+      ring2Ref.current.position.y = 18.5 + Math.cos(t * 1.3) * 0.45;
+    }
+
+    // 2. High-speed traveling lightning surge node
+    if (pulseRef.current) {
+      pulseRef.current.position.y = 14 + Math.sin(t * 2.5) * 11.5;
+    }
+
+    // 3. Core breathing luminescence
+    if (coreRef.current) {
+      const mat = coreRef.current.material as THREE.MeshStandardMaterial;
+      if (mat) {
+        mat.emissiveIntensity = 3.5 + Math.sin(t * 4.0) * 1.2;
+      }
+    }
+
+    // 4. Orbiting spark embers
+    if (sparksRef.current) {
+      sparksRef.current.rotation.y = t * 0.15;
+    }
+  });
+
+  return (
+    <group position={position} rotation={[0, rotationY, 0]}>
+      {/* 1. Heavy Stepped Triangular Foundation Pedestal */}
+      <mesh position={[0, 0.4, 0]}>
+        <cylinderGeometry args={[3.2, 4.2, 0.8, 3]} />
+        <meshStandardMaterial color="#08101e" roughness={0.2} metalness={0.92} />
+      </mesh>
+      <mesh position={[0, 0.95, 0]}>
+        <cylinderGeometry args={[2.5, 3.2, 0.5, 3]} />
+        <meshStandardMaterial color="#0e1f36" roughness={0.15} metalness={0.95} />
+      </mesh>
+
+      {/* Triangular Foundation Neon Trim */}
+      <mesh position={[0, 1.22, 0]}>
+        <cylinderGeometry args={[2.52, 2.52, 0.08, 3, 1, true]} />
+        <meshBasicMaterial color="#00f0ff" side={THREE.DoubleSide} />
+      </mesh>
+
+      {/* 2. Inner Radiant Sky-Blue Plasma Reactor Core */}
+      <mesh ref={coreRef} position={[0, 14.5, 0]}>
+        <cylinderGeometry args={[0.7, 0.9, 27, 3]} />
+        <meshStandardMaterial
+          color="#38bdf8"
+          emissive="#00e5ff"
+          emissiveIntensity={4.0}
+          roughness={0.08}
+          metalness={0.15}
+        />
+      </mesh>
+
+      {/* 3. Main Triangular Outer Monolith Armor Shaft */}
+      <mesh position={[0, 14.5, 0]}>
+        <cylinderGeometry args={[1.2, 2.0, 27.5, 3, 1, true]} />
+        <meshStandardMaterial
+          color="#061224"
+          roughness={0.14}
+          metalness={0.95}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
+
+      {/* 4. Glowing Sky-Blue Neon Rails along the 3 Sharp Corners */}
+      {[0, (Math.PI * 2) / 3, (Math.PI * 4) / 3].map((angle, i) => {
+        const r = 1.62;
+        const x = Math.cos(angle + Math.PI / 6) * r;
+        const z = Math.sin(angle + Math.PI / 6) * r;
+        return (
+          <group key={i} position={[x, 14.5, z]}>
+            {/* Corner Neon Tube */}
+            <mesh>
+              <cylinderGeometry args={[0.09, 0.12, 27.2, 8]} />
+              <meshBasicMaterial color="#00f0ff" />
+            </mesh>
+            {/* Outer Accent Fin */}
+            <mesh position={[x * 0.1, 0, z * 0.1]}>
+              <boxGeometry args={[0.08, 27.2, 0.35]} />
+              <meshStandardMaterial color="#38bdf8" roughness={0.1} metalness={0.9} />
+            </mesh>
+          </group>
+        );
+      })}
+
+      {/* 5. Floating Magnetic Triangular Rings */}
+      <group ref={ring1Ref} position={[0, 9.5, 0]}>
+        <mesh>
+          <cylinderGeometry args={[2.5, 2.5, 0.28, 3, 1, true]} />
+          <meshBasicMaterial color="#00f0ff" side={THREE.DoubleSide} />
+        </mesh>
+        <mesh>
+          <cylinderGeometry args={[2.55, 2.55, 0.12, 3, 1, true]} />
+          <meshBasicMaterial color="#ffffff" side={THREE.DoubleSide} />
+        </mesh>
+      </group>
+
+      <group ref={ring2Ref} position={[0, 18.5, 0]}>
+        <mesh>
+          <cylinderGeometry args={[2.0, 2.0, 0.25, 3, 1, true]} />
+          <meshBasicMaterial color="#38bdf8" side={THREE.DoubleSide} />
+        </mesh>
+        <mesh>
+          <cylinderGeometry args={[2.05, 2.05, 0.1, 3, 1, true]} />
+          <meshBasicMaterial color="#ffffff" side={THREE.DoubleSide} />
+        </mesh>
+      </group>
+
+      {/* 6. High-Speed Traveling Energy Node */}
+      <group ref={pulseRef} position={[0, 14, 0]}>
+        <mesh>
+          <sphereGeometry args={[0.55, 16, 16]} />
+          <meshBasicMaterial color="#ffffff" />
+        </mesh>
+        <mesh>
+          <sphereGeometry args={[0.85, 16, 16]} />
+          <meshBasicMaterial color="#00f0ff" transparent opacity={0.65} blending={THREE.AdditiveBlending} />
+        </mesh>
+        <pointLight color="#00f0ff" intensity={12} distance={20} decay={1.8} />
+      </group>
+
+      {/* 7. Dedicated Real Point Lights (Casting Sky-Blue Glow) */}
+      <pointLight position={[0, 15, 0]} color="#38bdf8" intensity={18} distance={38} decay={1.6} />
+      <pointLight position={[0, 28, 0]} color="#7dd3fc" intensity={25} distance={50} decay={1.4} />
+
+      {/* 8. Triangular Crown Head & Volumetric Sky-Blue Light Cone */}
+      <group position={[0, 28.5, 0]}>
+        {/* Crown Structure */}
+        <mesh position={[0, 0, 0]}>
+          <cylinderGeometry args={[2.0, 1.2, 1.8, 3]} />
+          <meshStandardMaterial color="#0a192e" roughness={0.15} metalness={0.95} />
+        </mesh>
+        {/* Sky-Blue Lens Ring */}
+        <mesh position={[0, 0.95, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+          <ringGeometry args={[0.4, 1.4, 16]} />
+          <meshBasicMaterial color="#00f0ff" side={THREE.DoubleSide} />
+        </mesh>
+
+        {/* Vertical Skyward Laser Guide Beam shooting into space */}
+        <mesh position={[0, 25, 0]}>
+          <cylinderGeometry args={[0.1, 0.7, 50, 16, 1, true]} />
+          <meshBasicMaterial
+            color="#38bdf8"
+            transparent
+            opacity={0.5}
+            side={THREE.DoubleSide}
+            blending={THREE.AdditiveBlending}
+            depthWrite={false}
+          />
+        </mesh>
+
+        {/* Volumetric Stage Spotlight Cone Pointing Down into Arena */}
+        <mesh position={[0, -2, 0]}>
+          <cylinderGeometry args={[0.5, 6.2, 54, 16, 1, true]} />
+          <meshBasicMaterial
+            color="#00f0ff"
+            transparent
+            opacity={0.34}
+            side={THREE.DoubleSide}
+            blending={THREE.AdditiveBlending}
+            depthWrite={false}
+          />
+        </mesh>
+      </group>
+
+      {/* 9. Orbiting Cyber Spark Embers */}
+      <points ref={sparksRef}>
+        <bufferGeometry>
+          <bufferAttribute attach="attributes-position" args={[sparkCoords, 3]} />
+        </bufferGeometry>
+        <pointsMaterial
+          size={0.24}
+          color="#38bdf8"
+          transparent
+          opacity={0.85}
+          map={starTexture ?? undefined}
+          blending={THREE.AdditiveBlending}
+          depthWrite={false}
+        />
+      </points>
+    </group>
+  );
+}
+
+function FrontStadiumTower({
+  position,
+  color = "#00f0ff",
+}: {
+  position: [number, number, number];
+  color?: string;
+}) {
+  return (
+    <group position={position}>
+      {/* Tower Foundation Pad */}
+      <mesh position={[0, 0.4, 0]}>
+        <cylinderGeometry args={[1.5, 2.0, 0.8, 16]} />
+        <meshStandardMaterial color="#0c101c" roughness={0.4} metalness={0.8} />
+      </mesh>
+
+      {/* Steel Lattice Mast */}
+      <mesh position={[0, 12, 0]}>
+        <cylinderGeometry args={[0.4, 0.7, 24, 6]} />
+        <meshStandardMaterial color="#1a2233" roughness={0.3} metalness={0.9} />
+      </mesh>
+
+      {/* Floodlight Head Fixture */}
+      <mesh position={[0, 24.2, 0]}>
+        <boxGeometry args={[3.0, 1.2, 1.4]} />
+        <meshStandardMaterial color="#0a0d17" roughness={0.2} metalness={0.9} />
+      </mesh>
+      <mesh position={[0, 24.2, 0.75]}>
+        <boxGeometry args={[2.8, 0.9, 0.1]} />
+        <meshBasicMaterial color={color} />
+      </mesh>
+
+      {/* Volumetric Stage Spotlight Cone Pointing into the Arena */}
+      <mesh position={[0, 24, 0]}>
+        <cylinderGeometry args={[0.35, 4.5, 48, 16, 1, true]} />
+        <meshBasicMaterial
+          color={color}
+          transparent
+          opacity={0.25}
+          side={THREE.DoubleSide}
+          blending={THREE.AdditiveBlending}
+          depthWrite={false}
+        />
+      </mesh>
     </group>
   );
 }
