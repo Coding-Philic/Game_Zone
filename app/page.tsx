@@ -9,23 +9,12 @@ import HUDOverlay from "@/components/three/HUDOverlay";
 // Dynamically import ArenaCanvas with SSR disabled
 const ArenaCanvas = dynamic(() => import("@/components/three/ArenaCanvas"), {
   ssr: false,
-  loading: () => (
-    <div className="fixed inset-0 flex flex-col items-center justify-center bg-[#03040a] text-center">
-      <div className="h-12 w-12 rounded-full border-2 border-amber-400 border-t-transparent animate-spin" />
-      <span className="mt-4 font-mono text-xs uppercase tracking-widest text-amber-400">
-        INITIALIZING 3D CYBER ARENA...
-      </span>
-      <p className="mt-1 font-mono text-[10px] text-gray-500">
-        LOADING SHADERS & SCENE GRAPH
-      </p>
-    </div>
-  ),
 });
 
 export default function HomePage() {
   const [scrollProgress, setScrollProgress] = useState(0);
   const [selectedGame, setSelectedGame] = useState<Game | null>(null);
-  const [isIntroActive, setIsIntroActive] = useState(true);
+  const [isIntroActive, setIsIntroActive] = useState(false);
 
   const targetProgress = useRef(0);
   const currentProgress = useRef(0);

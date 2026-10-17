@@ -43,16 +43,6 @@ export default function HUDOverlay({
     return null;
   }, [scrollProgress]);
 
-  useEffect(() => {
-    function onKeyDown(e: KeyboardEvent) {
-      if (e.key === "Escape" && isIntroActive) {
-        onSkipIntro?.();
-      }
-    }
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [isIntroActive, onSkipIntro]);
-
   // Scroll-driven animation for intro gateway logo:
   // When scrolling down (scrollProgress: 0.00 -> 0.10):
   // - Moves upward (y: 0 -> -340px)
@@ -67,65 +57,9 @@ export default function HUDOverlay({
   return (
     <div className="pointer-events-none fixed inset-0 z-30 flex flex-col justify-between p-3 md:p-5">
       {/* ------------------------------------------------------------- */}
-      {/* 0. CINEMATIC INTRO LETTERBOX & SEISMIC OVERLAY                 */}
-      {/* ------------------------------------------------------------- */}
-      <AnimatePresence>
-        {isIntroActive && (
-          <motion.div
-            key="cinematic-intro"
-            initial={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.8 }}
-            className="pointer-events-none fixed inset-0 z-50 flex flex-col justify-between overflow-hidden"
-          >
-            {/* Top Widescreen Letterbox Bar */}
-            <motion.div
-              initial={{ y: 0 }}
-              exit={{ y: "-100%" }}
-              transition={{ duration: 0.8, ease: "easeInOut" }}
-              className="flex h-16 w-full items-center justify-between border-b border-white/10 bg-black/95 px-6 backdrop-blur-xl md:h-20"
-            >
-              <div className="flex items-center gap-2">
-                <span className="h-2.5 w-2.5 rounded-full bg-red-500 animate-ping" />
-                <span className="font-mono text-xs uppercase tracking-widest text-red-400">
-                  SEISMIC EMERGENCE IN PROGRESS
-                </span>
-              </div>
-              <button
-                onClick={() => {
-                  sound.playWarp();
-                  onSkipIntro?.();
-                }}
-                className="pointer-events-auto flex items-center gap-2 rounded-full border border-cyan-400/40 bg-black/80 px-4 py-1.5 font-mono text-xs font-semibold text-cyan-300 backdrop-blur-md transition-all hover:border-amber-400 hover:bg-amber-500/20 hover:text-white"
-              >
-                <span>SKIP INTRO</span>
-                <span className="rounded bg-white/10 px-1.5 py-0.5 text-[9px] text-gray-400">ESC</span>
-              </button>
-            </motion.div>
-
-            {/* Bottom Widescreen Letterbox Bar */}
-            <motion.div
-              initial={{ y: 0 }}
-              exit={{ y: "100%" }}
-              transition={{ duration: 0.8, ease: "easeInOut" }}
-              className="flex h-16 w-full items-center justify-center border-t border-white/10 bg-black/95 px-6 backdrop-blur-xl md:h-20"
-            >
-              <span className="font-mono text-[11px] uppercase tracking-widest text-gray-400">
-                STADIUM HYDRAULICS ENGAGED // PREPARE FOR BATTLE
-              </span>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* ------------------------------------------------------------- */}
       {/* 1. TOP CONTROLS (Audio & Admin)                               */}
       {/* ------------------------------------------------------------- */}
-      <header
-        className={`pointer-events-auto flex items-center justify-end px-4 py-2.5 transition-opacity duration-700 ${
-          isIntroActive ? "opacity-0 pointer-events-none" : "opacity-100"
-        }`}
-      >
+      <header className="pointer-events-auto flex items-center justify-end px-4 py-2.5 opacity-100">
         {/* Right: Audio Ambiance & Admin */}
         <div className="flex items-center gap-2.5">
           <button
@@ -154,8 +88,8 @@ export default function HUDOverlay({
       {/* ------------------------------------------------------------- */}
       <main className="relative flex flex-1 items-center justify-center">
         <AnimatePresence mode="wait">
-          {/* INTRO GATEWAY (0.00 - 0.12) - Appears only after 3D elements have emerged */}
-          {scrollProgress < 0.12 && !isIntroActive && (
+          {/* INTRO GATEWAY (0.00 - 0.12) */}
+          {scrollProgress < 0.12 && (
             <motion.div
               key="scene-intro"
               initial={{ opacity: 0, scale: 0.88, y: 25 }}
