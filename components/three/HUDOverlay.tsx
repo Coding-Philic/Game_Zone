@@ -174,8 +174,8 @@ export default function HUDOverlay({
                 <Image
                   src="/images/gaming_fest_logo.webp"
                   alt="Gaming Fest - The Ultimate Cyber Arena"
-                  width={1300}
-                  height={669}
+                  width={1305}
+                  height={672}
                   priority
                   className="w-full h-auto object-contain filter drop-shadow-[0_0_35px_rgba(56,189,248,0.45)] select-none pointer-events-none"
                 />
