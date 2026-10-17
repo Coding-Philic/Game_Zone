@@ -1,69 +1,217 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import { useState, useEffect, useRef, useCallback } from "react";
+import dynamic from "next/dynamic";
+import type { Game } from "@/config/site";
+import RegistrationDialog from "@/components/RegistrationDialog";
+import HUDOverlay from "@/components/three/HUDOverlay";
+
+// Dynamically import ArenaCanvas with SSR disabled
+const ArenaCanvas = dynamic(() => import("@/components/three/ArenaCanvas"), {
+  ssr: false,
+  loading: () => (
+    <div className="fixed inset-0 flex flex-col items-center justify-center bg-[#03040a] text-center">
+      <div className="h-12 w-12 rounded-full border-2 border-amber-400 border-t-transparent animate-spin" />
+      <span className="mt-4 font-mono text-xs uppercase tracking-widest text-amber-400">
+        INITIALIZING 3D CYBER ARENA...
+      </span>
+      <p className="mt-1 font-mono text-[10px] text-gray-500">
+        LOADING SHADERS & SCENE GRAPH
+      </p>
+    </div>
+  ),
+});
+
+export default function HomePage() {
+  const [scrollProgress, setScrollProgress] = useState(0);
+  const [selectedGame, setSelectedGame] = useState<Game | null>(null);
+  const [isIntroActive, setIsIntroActive] = useState(true);
+
+  const targetProgress = useRef(0);
+  const currentProgress = useRef(0);
+  const touchStartY = useRef(0);
+  const isUpdatingFromScroll = useRef(false);
+
+  const handleSkipIntro = useCallback(() => {
+    setIsIntroActive(false);
+  }, []);
+
+  // Smooth RAF lerp loop
+  useEffect(() => {
+    let rafId: number;
+
+    function tick() {
+      // Smooth lerp: currentProgress -> targetProgress
+      const diff = targetProgress.current - currentProgress.current;
+      if (Math.abs(diff) > 0.0001) {
+        currentProgress.current += diff * 0.12;
+        setScrollProgress(currentProgress.current);
+      } else if (currentProgress.current !== targetProgress.current) {
+        currentProgress.current = targetProgress.current;
+        setScrollProgress(currentProgress.current);
+      }
+
+      rafId = requestAnimationFrame(tick);
+    }
+
+    rafId = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(rafId);
+  }, []);
+
+  // 1. Native Window Scroll Listener
+  useEffect(() => {
+    function onNativeScroll() {
+      const scrollY = window.scrollY;
+      const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+      if (maxScroll > 10) {
+        isUpdatingFromScroll.current = true;
+        const p = Math.min(1, Math.max(0, scrollY / maxScroll));
+        targetProgress.current = p;
+        setTimeout(() => {
+          isUpdatingFromScroll.current = false;
+        }, 50);
+      }
+    }
+
+    window.addEventListener("scroll", onNativeScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onNativeScroll);
+  }, []);
+
+  // 2. Wheel Event Listener (Smooth Direct Wheel Input)
+  useEffect(() => {
+    function onWheel(e: WheelEvent) {
+      // Normalize wheel delta (e.g. trackpad vs mousewheel)
+      const delta = e.deltaY;
+      const sensitivity = 0.00085;
+      const next = Math.min(1, Math.max(0, targetProgress.current + delta * sensitivity));
+
+      targetProgress.current = next;
+
+      // Sync native scrollbar so page position and scrollbar stay in sync
+      const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+      if (maxScroll > 10 && !isUpdatingFromScroll.current) {
+        window.scrollTo({
+          top: next * maxScroll,
+          behavior: "instant" as ScrollBehavior,
+        });
+      }
+    }
+
+    window.addEventListener("wheel", onWheel, { passive: true });
+    return () => window.removeEventListener("wheel", onWheel);
+  }, []);
+
+  // 3. Touch Gestures for Mobile & Tablets
+  useEffect(() => {
+    function onTouchStart(e: TouchEvent) {
+      if (e.touches.length > 0) {
+        touchStartY.current = e.touches[0].clientY;
+      }
+    }
+
+    function onTouchMove(e: TouchEvent) {
+      if (e.touches.length > 0) {
+        const currentY = e.touches[0].clientY;
+        const deltaY = touchStartY.current - currentY;
+        touchStartY.current = currentY;
+
+        const sensitivity = 0.002;
+        const next = Math.min(1, Math.max(0, targetProgress.current + deltaY * sensitivity));
+        targetProgress.current = next;
+
+        const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+        if (maxScroll > 10) {
+          window.scrollTo({
+            top: next * maxScroll,
+            behavior: "instant" as ScrollBehavior,
+          });
+        }
+      }
+    }
+
+    window.addEventListener("touchstart", onTouchStart, { passive: true });
+    window.addEventListener("touchmove", onTouchMove, { passive: true });
+
+    return () => {
+      window.removeEventListener("touchstart", onTouchStart);
+      window.removeEventListener("touchmove", onTouchMove);
+    };
+  }, []);
+
+  // 4. Keyboard Arrow Navigation
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      if (["ArrowDown", "PageDown", " "].includes(e.key)) {
+        e.preventDefault();
+        const next = Math.min(1, targetProgress.current + 0.06);
+        targetProgress.current = next;
+        syncScroll(next);
+      } else if (["ArrowUp", "PageUp"].includes(e.key)) {
+        e.preventDefault();
+        const next = Math.max(0, targetProgress.current - 0.06);
+        targetProgress.current = next;
+        syncScroll(next);
+      }
+    }
+
+    function syncScroll(p: number) {
+      const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+      if (maxScroll > 10) {
+        window.scrollTo({ top: p * maxScroll, behavior: "smooth" });
+      }
+    }
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, []);
+
+  // Jump to specific progress (e.g. from bottom timeline buttons)
+  const handleJumpToProgress = useCallback((progress: number) => {
+    targetProgress.current = Math.min(1, Math.max(0, progress));
+    const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+    if (maxScroll > 10) {
+      window.scrollTo({
+        top: progress * maxScroll,
+        behavior: "smooth",
+      });
+    }
+  }, []);
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
+    <div className="relative min-h-screen bg-[#03040a]">
+      {/* 1. Full-screen 3D Scene Canvas */}
+      <ArenaCanvas
+        scrollProgress={scrollProgress}
+        onSelectGame={setSelectedGame}
+        isIntroActive={isIntroActive}
+        onIntroComplete={handleSkipIntro}
+      />
+
+      {/* 2. Cinematic Sci-Fi HUD Overlay */}
+      <HUDOverlay
+        scrollProgress={scrollProgress}
+        onSelectGame={setSelectedGame}
+        onJumpToProgress={handleJumpToProgress}
+        isIntroActive={isIntroActive}
+        onSkipIntro={handleSkipIntro}
+      />
+
+      {/* 3. Physical Scroll Track (6000px provides consistent, reliable scroll range across all viewports) */}
+      <div
+        className="relative w-full pointer-events-none"
+        style={{ height: "6000px", minHeight: "6000px" }}
+      >
+        <div id="entrance" className="absolute top-[500px]" />
+        <div id="trophy" className="absolute top-[1800px]" />
+        <div id="games" className="absolute top-[3600px]" />
+        <div id="zenith" className="absolute top-[5400px]" />
+      </div>
+
+      {/* 4. Registration Dialog Modal */}
+      <RegistrationDialog
+        game={selectedGame}
+        onClose={() => setSelectedGame(null)}
+      />
     </div>
   );
 }
